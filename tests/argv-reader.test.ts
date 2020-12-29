@@ -1,5 +1,5 @@
 import ArgvReader from '../lib/argv-reader'
-import { CommandlineError, InvalidOptionError } from '../lib/exception'
+import { InvalidOptionError } from '../lib/exception'
 
 describe('argv-reader', () => {
   describe('ArgvReader', () => {
