@@ -45,7 +45,7 @@ console.log(opts)
 
 * Construct a reader by passing two arguments:
     - The first (`arg => ...`) is an extractor which receives each element and determines how to treat it.
-    - The second (`opts => ...`)is an converter which receives the result from the reader and convert it to the firnal result.
+    - The second (`opts => ...`) is a converter which receives the result from the reader and converts it to the firnal result.
 * `reader.read()` reads elements from passed array one by one.
 * The reader passes each element to the user supplied extractor function (`arg => ...` ) .
 * The extractor determines if the passed element is a flag, and if so, returns `['flag', 'flag1']`.
