@@ -3,7 +3,7 @@ import { ArgvReader } from '../index'
 import { InvalidOptionError, InvalidOptionValueError } from '../index'
 import { CommandlineError } from '../lib/exception'
 import { ApplicationCommandlineError } from './exception'
- // replace '../index' with 'argv-reader' to run the example app separately
+// replace '../index' with 'argv-reader' to run the example app separately
 
 const main = async () => {
   try {
