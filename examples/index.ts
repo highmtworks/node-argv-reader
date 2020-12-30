@@ -10,6 +10,7 @@ const main = async () => {
     await dispatch(rest)
   } catch (err) {
     if (err instanceof ApplicationCommandlineError) {
+      process.exitCode = 1
       console.error(`error: ${err.err.message}`)
       console.error(`\n${err.showHelp()}`)
       if (err.parsing != null) {
