@@ -83,7 +83,7 @@ options:
           case '-v': case '--verbose':
             return ['multiflag', 'verbose']
         }
-        if (/^-vv+/.test(arg)) {
+        if (/^-vv+$/.test(arg)) {
           return ['replace', arg.split('').slice(1).map(a => `-${a}`)]
         }
         throw new ApplicationCommandlineError(new InvalidOptionError(`unknown option: ${arg}`, 'unknown-option', arg), () => help)
