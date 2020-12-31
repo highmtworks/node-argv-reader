@@ -24,7 +24,7 @@ type ExtractorTypeOfNamedArg<S, I extends RecPartial<OptsType>> =
   | ['multiple', keyof I['multiples'], S?]
   | ['argument', keyof I['arguments'] | 'rest', S?]
 
-type ExtractorType<S, I extends RecPartial<OptsType> = OptsType> = (arg: string, state?: S) =>
+type ExtractorType<S, I extends RecPartial<OptsType>> = (arg: string, state?: S) =>
   ExtractorTypeOfNamedArg<S, I>
   | [NoNameArgType, S?] | NoNameArgType
   | [ReplaceArgType, string[], S?]
