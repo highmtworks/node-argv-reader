@@ -30,7 +30,7 @@ type ExtractorType<S, I extends RecPartial<OptsType>> = (arg: string, state?: S)
   | [ReplaceArgType, string[], S?]
   | [LookAheadArgType, CallbackType<S, I>]
 
-type ExtractedType<S, I extends RecPartial<OptsType>> = ReturnType<ExtractorType<S, I>>
+type ExtractorReturnType<S, I extends RecPartial<OptsType>> = ReturnType<ExtractorType<S, I>>
 
 type CallbackType<S, I extends RecPartial<OptsType>> = (arg?: string, state?: S) =>
   ExtractorTypeOfNamedArg<S, I>
@@ -125,7 +125,7 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
         continue
       }
 
-      const parse = (extracted: ExtractedType<S, I>) => {
+      const parse = (extracted: ExtractorReturnType<S, I>) => {
         while (true) {
           const [argType, optName, nextState, replacer, lookahead] = !Array.isArray(extracted)
             ? [extracted, '', undefined, [], undefined]
