@@ -412,7 +412,7 @@ console.log(opts)
 
 ### Return structs instead of tuples
 
-* Extractors can return structs instead of tuples. The former is more readable in some cases.  
+* From v1.2.0, extractors can return structs instead of tuples. The former is more readable in some cases.  
   For example:
 
   ```
