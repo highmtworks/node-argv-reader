@@ -1,13 +1,15 @@
 import { newPredefinedInvalidOptionValueError } from './exception'
 
 const namedArgType = ['flag', 'multiflag', 'noflag', 'single', 'multiple', 'argument'] as const
-const noNameArgType = [false, 'rest', 'skip'] as const
+const noNameArgKeyType = ['rest', 'skip'] as const
+const noNameArgType = [false, ...noNameArgKeyType] as const
 const replaceArgType = ['replace'] as const
 const lookAheadArgType = ['lookahead'] as const
 
 type AnyOf<T extends readonly any[]> = T[number]
 
 type NamedArgType = AnyOf<typeof namedArgType>
+type NoNameArgKeyType = AnyOf<typeof noNameArgKeyType>
 type NoNameArgType = AnyOf<typeof noNameArgType>
 type ReplaceArgType = AnyOf<typeof replaceArgType>
 type LookAheadArgType = AnyOf<typeof lookAheadArgType>
@@ -16,26 +18,38 @@ type RecPartial<T> = {
   [P in keyof T]?: Partial<T[P]>;
 }
 
-type ExtractorTypeOfNamedArg<S, I extends RecPartial<OptsType>> =
-  ['flag', keyof I['flags'], S?]
-  | ['multiflag', keyof I['multiflags'], S?]
-  | ['noflag', keyof I['flags'], S?]
-  | ['single', keyof I['singles'], S?]
-  | ['multiple', keyof I['multiples'], S?]
-  | ['argument', keyof I['arguments'] | 'rest', S?]
+type MapNameTypeOfNamedArg<K extends NamedArgType, I extends RecPartial<OptsType>> =
+  K extends 'flag' ? keyof I['flags'] :
+  K extends 'multiflag' ? keyof I['multiflags'] :
+  K extends 'noflag' ? keyof I['flags'] :
+  K extends 'single' ? keyof I['singles'] :
+  K extends 'multiple' ? keyof I['multiples'] :
+  K extends 'argument' ? keyof I['arguments'] | 'rest' :
+  never
+
+type MapExtractedypeOfNamedArgKey<S, K extends NamedArgType, I extends RecPartial<OptsType>> =
+  [K, MapNameTypeOfNamedArg<K, I>, S?] | { type: K, name: MapNameTypeOfNamedArg<K, I>, state?: S }
+
+type ExtractorReturnTypeOfNamedArg<S, I extends RecPartial<OptsType>> =
+  MapExtractedypeOfNamedArgKey<S, 'flag', I>
+  | MapExtractedypeOfNamedArgKey<S, 'multiflag', I>
+  | MapExtractedypeOfNamedArgKey<S, 'noflag', I>
+  | MapExtractedypeOfNamedArgKey<S, 'single', I>
+  | MapExtractedypeOfNamedArgKey<S, 'multiple', I>
+  | MapExtractedypeOfNamedArgKey<S, 'argument', I>
 
 type ExtractorType<S, I extends RecPartial<OptsType>> = (arg: string, state?: S) =>
-  ExtractorTypeOfNamedArg<S, I>
-  | [NoNameArgType, S?] | NoNameArgType
-  | [ReplaceArgType, string[], S?]
-  | [LookAheadArgType, CallbackType<S, I>]
+  ExtractorReturnTypeOfNamedArg<S, I>
+  | [NoNameArgType, S?] | NoNameArgType | { type: NoNameArgKeyType, state?: S }
+  | [ReplaceArgType, string[], S?] | { type: ReplaceArgType, replace: string[], state?: S }
+  | [LookAheadArgType, CallbackType<S, I>] | { type: LookAheadArgType, lookahead: CallbackType<S, I> }
 
 type ExtractorReturnType<S, I extends RecPartial<OptsType>> = ReturnType<ExtractorType<S, I>>
 
 type CallbackType<S, I extends RecPartial<OptsType>> = (arg?: string, state?: S) =>
-  ExtractorTypeOfNamedArg<S, I>
-  | [NoNameArgType, S?] | NoNameArgType
-  | [ReplaceArgType, string[], S?]
+  ExtractorReturnTypeOfNamedArg<S, I>
+  | [NoNameArgType, S?] | NoNameArgType | { type: NoNameArgKeyType, state?: S }
+  | [ReplaceArgType, string[], S?] | { type: ReplaceArgType, replace: string[], state?: S }
 
 type OptsType = {
   flags: { [key: string]: boolean },
@@ -62,6 +76,22 @@ const isReplaceArgTuple = <S>(s: [NamedArgType | NoNameArgType | ReplaceArgType 
 
 const isLookAheadArgTuple = <S, I extends RecPartial<OptsType>>(s: [NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType, unknown?, unknown?]): s is [LookAheadArgType, CallbackType<S, I>] => {
   return isLookAheadArg(s[0])
+}
+
+const isNamedArgStruct = <S>(t: object | { type: string }): t is { type: NamedArgType, name: string, state?: S } => {
+  return ('type' in t) && (namedArgType as readonly string[]).includes(t.type)
+}
+
+const isNoNameArgStruct = <S>(t: object | { type: string }): t is { type: NoNameArgKeyType, state?: S } => {
+  return ('type' in t) && (noNameArgKeyType as readonly string[]).includes(t.type)
+}
+
+const isReplaceArgStruct = <S>(t: object | { type: string }): t is { type: ReplaceArgType, replace: string[], state?: S } => {
+  return ('type' in t) && (replaceArgType as readonly string[]).includes(t.type)
+}
+
+const isLookAheadArgStruct = <S, I>(t: object | { type: string }): t is { type: LookAheadArgType, lookahead: CallbackType<S, I> } => {
+  return ('type' in t) && (lookAheadArgType as readonly string[]).includes(t.type)
 }
 
 const isNamedArg = (s: NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType): s is NamedArgType => {
@@ -128,8 +158,18 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
       const parse = (extracted: ExtractorReturnType<S, I>) => {
         while (true) {
           const [argType, optName, nextState, replacer, lookahead] = !Array.isArray(extracted)
-            ? [extracted, '', undefined, [], undefined]
-            : (isNamedArgTuple(extracted)
+            ? !(extracted instanceof Object)
+              ? [extracted, '', undefined, [], undefined]
+              : isNamedArgStruct(extracted)
+                ? [extracted.type, extracted.name, extracted.state, [], undefined]
+                : isNoNameArgStruct(extracted)
+                  ? [extracted.type, '', extracted.state, [], undefined]
+                  : isReplaceArgStruct(extracted)
+                    ? [extracted.type, '', extracted.state, extracted.replace, undefined]
+                    : isLookAheadArgStruct<S, I>(extracted)
+                      ? [extracted.type, '', undefined, [], extracted.lookahead]
+                      : [undefined, '', undefined, [], undefined]
+            : isNamedArgTuple(extracted)
               ? [extracted[0], extracted[1], extracted[2], [], undefined]
               : isNoNameArgTuple(extracted)
                 ? [extracted[0], '', extracted[1], [], undefined]
@@ -137,7 +177,7 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
                   ? [extracted[0], '', extracted[2], extracted[1], undefined]
                   : isLookAheadArgTuple(extracted)
                     ? [extracted[0], '', undefined, [], extracted[1]]
-                    : [undefined, '', undefined, [], undefined])
+                    : [undefined, '', undefined, [], undefined]
           if (argType === 'lookahead') {
             extracted = lookahead!(xargv[i], state)
             continue
