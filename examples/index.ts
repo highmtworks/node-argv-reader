@@ -70,7 +70,7 @@ options:
     }
     rest: string[]
   }
-  const reader = new ArgvReader<'rest', ParsingTopOpts>(
+  const reader = new ArgvReader<'rest', ParsingTopOpts, ParsingTopOpts>(
     (arg, state) => {
       if (state === 'rest') {
         return ['argument', 'rest']
@@ -93,7 +93,7 @@ options:
       }
       return false
     },
-    opts => opts as ParsingTopOpts
+    opts => opts
   )
   const parsing = handleCommandlineError(() => reader.read(argv), () => help)
   if (parsing.arguments.command == null || parsing.arguments.command.length === 0) {
@@ -160,7 +160,7 @@ tool-workdir:
     }
     rest: string[]
   }
-  const reader = new ArgvReader<null | 'tool1' | 'tool1-v' | 'tool2' | 'tool2-v', ParsingBuildOpts>(
+  const reader = new ArgvReader<null | 'tool1' | 'tool1-v' | 'tool2' | 'tool2-v', ParsingBuildOpts, ParsingBuildOpts>(
     (arg, state) => {
       if (arg === '--') {
         return ['rest', null]
@@ -223,7 +223,7 @@ tool-workdir:
           return false
       }
     },
-    opts => opts as ParsingBuildOpts
+    opts => opts
   )
   const parsing = handleCommandlineError(() => reader.read(argv), () => help)
   if (parsing.arguments.tool1workdir == null || parsing.arguments.tool1workdir.length === 0) {
@@ -280,7 +280,7 @@ options:
       version?: string
     }
   }
-  const reader = new ArgvReader(
+  const reader = new ArgvReader<unknown, ParsingReleaseOpts, ParsingReleaseOpts>(
     arg => {
       if (arg.startsWith('-')) {
         if (arg === '--') {
@@ -299,7 +299,7 @@ options:
       }
       throw new ApplicationCommandlineError(new InvalidOptionValueError(`can not take any arguments: ${arg}`, 'expect-no-argument', 'argument', arg), () => help)
     },
-    opts => opts as ParsingReleaseOpts
+    opts => opts
   )
   const parsing = handleCommandlineError(() => reader.read(argv), () => help)
   if (parsing.singles.app == null) {
