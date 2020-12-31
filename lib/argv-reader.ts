@@ -60,7 +60,7 @@ const isReplaceArgTuple = <S>(s: [NamedArgType | NoNameArgType | ReplaceArgType 
   return isReplaceArg(s[0])
 }
 
-const isLookAheadArgTuple = <S, I extends OptsType>(s: [NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType, unknown?, unknown?]): s is [LookAheadArgType, CallbackType<S, I>] => {
+const isLookAheadArgTuple = <S, I extends RecPartial<OptsType>>(s: [NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType, unknown?, unknown?]): s is [LookAheadArgType, CallbackType<S, I>] => {
   return isLookAheadArg(s[0])
 }
 
