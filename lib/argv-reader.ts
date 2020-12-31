@@ -12,13 +12,28 @@ type NoNameArgType = AnyOf<typeof noNameArgType>
 type ReplaceArgType = AnyOf<typeof replaceArgType>
 type LookAheadArgType = AnyOf<typeof lookAheadArgType>
 
-type ExtractorType<S> = (arg: string, state?: S) => [NamedArgType, string, S?]
+type RecPartial<T> = {
+  [P in keyof T]?: Partial<T[P]>;
+}
+
+type ExtractorTypeOfNamedArg<S, I extends RecPartial<OptsType>> =
+  ['flag', keyof I['flags'], S?]
+  | ['multiflag', keyof I['multiflags'], S?]
+  | ['noflag', keyof I['flags'], S?]
+  | ['single', keyof I['singles'], S?]
+  | ['multiple', keyof I['multiples'], S?]
+  | ['argument', keyof I['arguments'] | 'rest', S?]
+
+type ExtractorType<S, I extends RecPartial<OptsType> = OptsType> = (arg: string, state?: S) =>
+  ExtractorTypeOfNamedArg<S, I>
   | [NoNameArgType, S?] | NoNameArgType
   | [ReplaceArgType, string[], S?]
-  | [LookAheadArgType, CallbackType<S>]
-type ExtractedType<S> = ReturnType<ExtractorType<S>>
+  | [LookAheadArgType, CallbackType<S, I>]
 
-type CallbackType<S> = (arg?: string, state?: S) => [NamedArgType, string, S?]
+type ExtractedType<S, I extends RecPartial<OptsType>> = ReturnType<ExtractorType<S, I>>
+
+type CallbackType<S, I extends RecPartial<OptsType>> = (arg?: string, state?: S) =>
+  ExtractorTypeOfNamedArg<S, I>
   | [NoNameArgType, S?] | NoNameArgType
   | [ReplaceArgType, string[], S?]
 
@@ -31,7 +46,7 @@ type OptsType = {
   rest: string[]
 }
 
-type ConverterType<A> = (opts: OptsType) => A
+type ConverterType<A, I extends RecPartial<OptsType>> = (opts: Pick<I, keyof OptsType>) => A
 
 const isNamedArgTuple = <S>(s: [NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType, unknown?, unknown?]): s is [NamedArgType, string, S?] => {
   return isNamedArg(s[0])
@@ -45,7 +60,7 @@ const isReplaceArgTuple = <S>(s: [NamedArgType | NoNameArgType | ReplaceArgType 
   return isReplaceArg(s[0])
 }
 
-const isLookAheadArgTuple = <S>(s: [NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType, unknown?, unknown?]): s is [LookAheadArgType, CallbackType<S>] => {
+const isLookAheadArgTuple = <S, I extends OptsType>(s: [NamedArgType | NoNameArgType | ReplaceArgType | LookAheadArgType, unknown?, unknown?]): s is [LookAheadArgType, CallbackType<S, I>] => {
   return isLookAheadArg(s[0])
 }
 
@@ -65,11 +80,14 @@ const isLookAheadArg = (s: NamedArgType | NoNameArgType | ReplaceArgType | LookA
   return (lookAheadArgType as readonly (boolean | string)[]).includes(s)
 }
 
-export default class ArgvReader<S, A> {
-  readonly extractor: ExtractorType<S>
-  readonly converter: ConverterType<A>
+export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType> {
+  readonly extractor: ExtractorType<S, I>
+  readonly converter: ConverterType<A, I>
 
-  constructor(extractor: ExtractorType<S>, converter: ConverterType<A>) {
+  constructor(extractor: ExtractorType<S, I>, converter: ConverterType<A, I>) {
+    // NOTE: Currenty S is not inferred correctly.
+    //       Replacing S in tuples with { state: S } will resove this,
+    //       but it brings breaking change to API.
     this.extractor = extractor
     this.converter = converter
   }
@@ -107,7 +125,7 @@ export default class ArgvReader<S, A> {
         continue
       }
 
-      const parse = (extracted: ExtractedType<S>) => {
+      const parse = (extracted: ExtractedType<S, I>) => {
         while (true) {
           const [argType, optName, nextState, replacer, lookahead] = !Array.isArray(extracted)
             ? [extracted, '', undefined, [], undefined]

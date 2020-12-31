@@ -16,20 +16,20 @@ describe('argv-reader', () => {
           optional1?: string,
         },
         multiples: {
-          multiple1?: string,
+          multiple1?: string[],
         },
         arguments: {
-          argument1?: string,
+          argument1?: string[],
         },
         rest: string[]
       }
       const context: {
-        reader: ArgvReader<unknown, RawOpts>
+        reader: ArgvReader<unknown, RawOpts, RawOpts>
       } = {
         reader: null!
       }
       beforeAll(() => {
-        context.reader = new ArgvReader<unknown, RawOpts>(
+        context.reader = new ArgvReader<unknown, RawOpts, RawOpts>(
           arg => {
             if (arg.startsWith('-')) {
               if (arg === '--') {
@@ -55,7 +55,7 @@ describe('argv-reader', () => {
             }
             return false
           },
-          opts => opts as RawOpts,
+          opts => opts,
         )
       })
       it('parses a short flag', () => {
@@ -140,12 +140,12 @@ describe('argv-reader', () => {
         rest: string[]
       }
       const context: {
-        reader: ArgvReader<'rest', RawOpts>
+        reader: ArgvReader<'rest', RawOpts, RawOpts>
       } = {
         reader: null!
       }
       beforeAll(() => {
-        context.reader = new ArgvReader<'rest', RawOpts>(
+        context.reader = new ArgvReader<'rest', RawOpts, RawOpts>(
           (arg, state) => {
             if (state === 'rest') {
               return ['argument', 'rest']
@@ -161,7 +161,7 @@ describe('argv-reader', () => {
             }
             return false
           },
-          opts => opts as RawOpts,
+          opts => opts,
         )
       })
       it('takes the first argument as the argument of command', () => {
@@ -187,12 +187,12 @@ describe('argv-reader', () => {
         },
       }
       const context: {
-        reader: ArgvReader<null | 'verbatim', RawOpts>
+        reader: ArgvReader<null | 'verbatim', RawOpts, RawOpts>
       } = {
         reader: null!
       }
       beforeAll(() => {
-        context.reader = new ArgvReader<null | 'verbatim', RawOpts>(
+        context.reader = new ArgvReader<null | 'verbatim', RawOpts, RawOpts>(
           (arg, state) => {
             if (state === 'verbatim') {
               return ['argument', 'argument1', null]
@@ -209,7 +209,7 @@ describe('argv-reader', () => {
               return ['argument', 'argument1']
             }
           },
-          opts => opts as RawOpts,
+          opts => opts,
         )
       })
       it('takes the first argument as the argument of command', () => {

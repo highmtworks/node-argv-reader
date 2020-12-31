@@ -26,7 +26,7 @@ type RawOpts = {
     flag1?: boolean,
   },
 }
-const reader = new ArgvReader<unknown, RawOpts>(
+const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
   arg => {
     if (arg.startsWith('-')) {
       switch (arg) {
@@ -36,7 +36,7 @@ const reader = new ArgvReader<unknown, RawOpts>(
     }
     return false
   },
-  opts => opts as RawOpts,
+  opts => opts,
 )
 const opts = reader.read(['-f'])
 console.log(opts)
@@ -54,7 +54,7 @@ console.log(opts)
 * The extractor returns `false` if the passed element is not a flag. This indicates it is interpreted as part of rest arguments (as seen later.)
 * The reader interprets returned value from extractor and stores the result.
     - flags are stored in `flags.{{flag name}}`.
-* After all elements are read, the reader passes the result to the user supplied converter function (`opts => ...`), which just returns the same as the final result here but casts it to the typed value.
+* After all elements are read, the reader passes the result to the user supplied converter function (`opts => ...`), which just returns the same as the final result here.
 * `reader.read()` returns the final result.
 
 
@@ -66,7 +66,7 @@ type RawOpts = {
     single1?: string,
   },
 }
-const reader = new ArgvReader<unknown, RawOpts>(
+const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
   arg => {
     if (arg.startsWith('-')) {
       switch (arg) {
@@ -76,7 +76,7 @@ const reader = new ArgvReader<unknown, RawOpts>(
     }
     return false
   },
-  opts => opts as RawOpts,
+  opts => opts,
 )
 const opts = reader.read(['-s', 'a-value'])
 console.log(opts)
@@ -96,11 +96,11 @@ console.log(opts)
 type RawOpts = {
   rest: string[],
 }
-const reader = new ArgvReader<unknown, RawOpts>(
+const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
   arg => {
     return false
   },
-  opts => opts as RawOpts,
+  opts => opts,
 )
 const opts = reader.read(['a', 'b'])
 console.log(opts)
@@ -122,7 +122,7 @@ type RawOpts = {
   },
   rest: string[],
 }
-const reader = new ArgvReader<unknown, RawOpts>(
+const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
   arg => {
     if (arg.startsWith('-')) {
       switch (arg) {
@@ -134,7 +134,7 @@ const reader = new ArgvReader<unknown, RawOpts>(
     }
     return false
   },
-  opts => opts as RawOpts,
+  opts => opts,
 )
 const opts = reader.read(['-f', '-s', 'a-value', 'a', 'b'])
 console.log(opts)
@@ -154,7 +154,16 @@ console.log(opts)
 * If error should be thrown,
 
   ```
-  const reader = new ArgvReader<unknown, RawOpts>(
+  type RawOpts = {
+    flags: {
+      flag1?: boolean,
+    },
+    singles: {
+      single1?: string,
+    },
+    rest: string[],
+  }
+  const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
     arg => {
       if (arg.startsWith('-')) {
         switch (arg) {
@@ -168,7 +177,7 @@ console.log(opts)
       }
       return false
     },
-    opts => opts as RawOpts,
+    opts => opts,
   )
   const opts = reader.read(['-h'])
   // -> Error: unknown option: -h
@@ -180,7 +189,16 @@ console.log(opts)
 * The extractor can return `'rest'` to show the elements after this marker are treated as rest arguments, which are not passed to the extractor any more.
 
   ```
-  const reader = new ArgvReader<unknown, RawOpts>(
+  type RawOpts = {
+    flags: {
+      flag1?: boolean,
+    },
+    singles: {
+      single1?: string,
+    },
+    rest: string[],
+  }
+  const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
     arg => {
       if (arg.startsWith('-')) {
         // added the following lines
@@ -197,7 +215,7 @@ console.log(opts)
       }
       return false
     },
-    opts => opts as RawOpts,
+    opts => opts,
   )
   const opts = reader.read(['--', '-h'])
   console.log(opts)
@@ -226,7 +244,7 @@ console.log(opts)
     },
     rest: string[],
   }
-  const reader = new ArgvReader<unknown, RawOpts>(
+  const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
     arg => {
       if (arg.startsWith('-')) {
         if (arg === '--') {
@@ -250,7 +268,7 @@ console.log(opts)
       }
       return false
     },
-    opts => opts as RawOpts,
+    opts => opts,
   )
   const opts = reader.read(['-vvv'])
   console.log(opts)
@@ -270,7 +288,16 @@ console.log(opts)
 * The extractor can look ahead the next element and determine if the current element should take the next element as its argument, or should not take the next element and take default value as its argument.
 
   ```
-  const reader = new ArgvReader<unknown, RawOpts>(
+  type RawOpts = {
+    flags: {
+      flag1?: boolean,
+    },
+    singles: {
+      single1?: string,
+    },
+    rest: string[],
+  }
+  const reader = new ArgvReader<unknown, RawOpts, RawOpts>(
     arg => {
       if (arg.startsWith('-')) {
         if (arg === '--') {
@@ -289,7 +316,7 @@ console.log(opts)
       }
       return false
     },
-    opts => opts as RawOpts,
+    opts => opts,
   )
   const opts = reader.read(['-s', '-f'])
   console.log(opts)
@@ -329,7 +356,7 @@ console.log(opts)
     }
     rest: string[]
   }
-  const reader = new ArgvReader<'rest', ParsingTopOpts>(
+  const reader = new ArgvReader<'rest', ParsingTopOpts, ParsingTopOpts>(
     (arg, state) => {
       if (state === 'rest') {
         return ['argument', 'rest']
@@ -345,7 +372,7 @@ console.log(opts)
       }
       return false
     },
-    opts => opts as ParsingTopOpts
+    opts => opts
   )
   const topOpts = reader.read(process.argv.slice(2))
   ```
@@ -369,11 +396,15 @@ console.log(opts)
 * Then dispatch rest arguments to sub commands:
 
   ```
-  switch (topOpts.command) {
+  if (topOpts.arguments.command == null || topOpts.arguments.command.length == 0) {
+    throw Error('command is mandatory')
+  }
+  switch (topOpts.arguments.command[0]) {
     case 'command1': {
       const subreader = new ArgvReader // ...
       const subOpts = subreader.read(topOpts.rest)
       doSomethingOfSubCommmand1(topOpts, subOpts)
+      break
     }
     // ...
   }
