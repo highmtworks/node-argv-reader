@@ -410,6 +410,39 @@ console.log(opts)
   }
   ```
 
+### Return structs instead of tuples
+
+* Extractors can return structs instead of tuples. The former is more readable in some cases.  
+  For example:
+
+  ```
+  return { type: 'rest' }
+  return { type: 'rest', state: 'state1' }
+  return { type: 'skip' }
+  return { type: 'skip', state: 'state1' }
+  return { type: 'flag', name: 'flag1' }
+  return { type: 'flag', name: 'flag1', state: 'state1' }
+  return { type: 'multiflag', name: 'multiflag1' }
+  return { type: 'multiflag', name: 'multiflag1', state: 'state1' }
+  return { type: 'noflag', name: 'flag1' }
+  return { type: 'noflag', name: 'flag1', state: 'state1' }
+  return { type: 'single', name: 'single1' }
+  return { type: 'single', name: 'single1', state: 'state1' }
+  return { type: 'multiple', name: 'multiple1' }
+  return { type: 'multiple', name: 'multiple1', state: 'state1' }
+  return { type: 'argument', name: 'argument1' }
+  return { type: 'argument', name: 'argument1', state: 'state1' }
+  return { type: 'replace', replace: ['replacer'] }
+  return { type: 'replace', replace: ['replacer'], state: 'state1' }
+  return {
+    type: 'lookahead',
+    lookahead: la => la == null || la.startsWith('-')
+      ? { type: 'replace', replace: [arg, ''] }
+      : { type: 'single', name: 'optional1' }
+  }
+  ```
+
+
 ## What this library does not provide
 
 ### Check if invalid values are given to options
