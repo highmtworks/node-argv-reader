@@ -155,7 +155,7 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
         continue
       }
 
-      const parse = (extracted: ExtractorReturnType<S, I>) => {
+      const parse = (extracted: ExtractorReturnType<S, I>, inLookAhead: boolean) => {
         while (true) {
           const [argType, optName, nextState, replacer, lookahead] = !Array.isArray(extracted)
             ? !(extracted instanceof Object)
@@ -179,7 +179,9 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
                     ? [extracted[0], '', undefined, [], extracted[1]]
                     : [undefined, '', undefined, [], undefined]
           if (argType === 'lookahead') {
+            if (inLookAhead) throw new Error(`lookahead in lookahead is not allowed`)
             extracted = lookahead!(xargv[i], state)
+            inLookAhead = true
             continue
           }
           return [argType, optName, nextState, replacer] as const
@@ -187,7 +189,7 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
       }
 
       const extracted = this.extractor(arg, state)
-      const [argType, optName, nextState, replacer] = parse(extracted)
+      const [argType, optName, nextState, replacer] = parse(extracted, false)
 
       if (nextState !== undefined) {
         state = nextState

@@ -465,6 +465,8 @@ describe('argv-reader', () => {
               return ['?'] as any
             } else if (x === 'struct') {
               return { type: '?' } as any
+            } else if (x === 'lookahead') {
+              return { type: 'lookahead', lookahead: (_: any) => ({ type: 'lookahead' }) } as any
             } else {
               return '?' as any
             }
@@ -480,6 +482,9 @@ describe('argv-reader', () => {
       })
       it('aborts if invalid action struct is returned', () => {
         expect(() => context.reader.read(['struct'])).toThrowError(/unknown arg type/)
+      })
+      it('aborts if lookahead is returned in lookahead', () => {
+        expect(() => context.reader.read(['lookahead'])).toThrowError(/lookahead in lookahead is not allowed/)
       })
     })
   })
