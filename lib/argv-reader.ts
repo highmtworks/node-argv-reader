@@ -115,9 +115,10 @@ export default class ArgvReader<S, A, I extends RecPartial<OptsType> = OptsType>
   readonly converter: ConverterType<A, I>
 
   constructor(extractor: ExtractorType<S, I>, converter: ConverterType<A, I>) {
-    // NOTE: Currenty S is not inferred correctly.
-    //       Replacing S in tuples with { state: S } will resove this,
-    //       but it brings breaking change to API.
+    // NOTE: Currenty typescript does not infer S correctly when the extractor
+    //       returns tuples.
+    //       If this is a trouble, structs can be tried to use instead.
+    //       Specifying S explicitly will always work.
     this.extractor = extractor
     this.converter = converter
   }
