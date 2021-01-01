@@ -461,20 +461,25 @@ describe('argv-reader', () => {
       beforeAll(() => {
         context.reader = new ArgvReader<unknown, RawOpts, RawOpts>(
           x => {
-            if (x === 'tuple') {
-              return ['?'] as any
-            } else if (x === 'struct') {
-              return { type: '?' } as any
-            } else if (x === 'lookahead') {
-              return { type: 'lookahead', lookahead: (_: any) => ({ type: 'lookahead' }) } as any
-            } else {
-              return '?' as any
+            switch (x) {
+              case 'tuple':
+                return ['?'] as any
+              case 'struct':
+                return { type: '?' } as any
+              case 'lookahead':
+                return ['lookahead', (_: any) => '?'] as any
+              case 'lookahead tuple':
+                return ['lookahead', (_: any) => ['lookahead']] as any
+              case 'lookahead struct':
+                return { type: 'lookahead', lookahead: (_: any) => ({ type: 'lookahead' }) } as any
+              default:
+                return '?' as any
             }
           },
           opts => opts,
         )
       })
-      it('aborts if invalid action is returned', () => {
+      it('aborts if invalid action scalar is returned', () => {
         expect(() => context.reader.read(['scalar'])).toThrowError(/unknown arg type/)
       })
       it('aborts if invalid action tuple is returned', () => {
@@ -483,8 +488,14 @@ describe('argv-reader', () => {
       it('aborts if invalid action struct is returned', () => {
         expect(() => context.reader.read(['struct'])).toThrowError(/unknown arg type/)
       })
-      it('aborts if lookahead is returned in lookahead', () => {
-        expect(() => context.reader.read(['lookahead'])).toThrowError(/lookahead in lookahead is not allowed/)
+      it('aborts if invalid action scalar is returned in lookahead', () => {
+        expect(() => context.reader.read(['lookahead'])).toThrowError(/unknown arg type/)
+      })
+      it('aborts if lookahead tuple is returned in lookahead', () => {
+        expect(() => context.reader.read(['lookahead tuple'])).toThrowError(/lookahead in lookahead is not allowed/)
+      })
+      it('aborts if lookahead struct is returned in lookahead', () => {
+        expect(() => context.reader.read(['lookahead struct'])).toThrowError(/lookahead in lookahead is not allowed/)
       })
     })
   })
