@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "git clean -dX -f dist",
     "build": "tsc",
-    "test": "jest --coverage",
+    "test": "jest",
     "prepare": "npm run clean && npm run build"
   },
   "files": [
