@@ -58,7 +58,7 @@ console.log(opts)
 * `reader.read()` returns the final result.
 
 
-### Parse options which takes its argument
+### Parse options which take their arguments
 
 ```
 type RawOpts = {
