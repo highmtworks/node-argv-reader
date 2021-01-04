@@ -410,6 +410,69 @@ console.log(opts)
   }
   ```
 
+### Divide options into groups
+
+* You may want to add an additional set of options to the original options of your app, like [GHC-compiled program](https://downloads.haskell.org/ghc/latest/docs/html/users_guide/runtime_control.html#setting-rts-options).  
+  `state` is useful to realize this:
+
+  ```
+  type ParsingOpts = {
+    flags: {
+      flag_a: boolean
+      flag_b: boolean
+      flag_c: boolean
+      group1_flag_a: boolean
+      group1_flag_b: boolean
+      group1_flag_c: boolean
+    }
+  }
+  const reader = new ArgvReader<null | 'group1', ParsingOpts, ParsingOpts>(
+    (arg, state) => {
+      if (state === 'group1') {
+        if (arg.startsWith('-')) {
+          switch (arg) {
+            case '-a':
+              return ['flag', 'group1_flag_a']
+            case '-b':
+              return ['flag', 'group1_flag_b']
+            case '-c':
+              return ['flag', 'group1_flag_c']
+            case '-GRP1':
+              return ['skip', null]
+          }
+          throw new Error(`unknown option: ${arg}`)
+        }
+        throw new Error(`unknown argument: ${arg}`)
+      }
+      if (arg.startsWith('-')) {
+        switch (arg) {
+          case '-a':
+            return ['flag', 'flag_a']
+          case '-b':
+            return ['flag', 'flag_b']
+          case '-c':
+            return ['flag', 'flag_c']
+        }
+        throw new Error(`unknown option: ${arg}`)
+      }
+      switch (arg) {
+        case '+GRP1':
+          return ['skip', 'group1']
+      }
+      throw new Error(`unknown argument: ${arg}`)
+    },
+    opts => opts
+  )
+  const opts = reader.read(['-a', '+GRP1', '-a', '-b', '-GRP1', '-c'])
+  console.log(opts)
+  // -> {
+  //   flag_a: true,
+  //   flag_c: true,
+  //   group1_flag_a: true,
+  //   group1_flag_b: true,
+  // }
+  ```
+
 ### Return structs instead of tuples
 
 * From v1.2.0, extractors can return structs instead of tuples. The former is more readable in some cases.  
